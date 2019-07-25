@@ -1,0 +1,23 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t shawakash54/multi-container-react-test -f ./client/Dockerfile.dev ./client
+
+script: # if any script exits with a status code other than 0, then travis will assume that the build failed
+  - docker run -e CI=true shawakash54/multi-container-react-test npm run test -- --coverage
+  # We can add more test suites here for worker, server, other apps.
+
+after_success:
+  - docker build -t shawakash54/multi-container-demo-client ./client
+  - docker build -t shawakash54/multi-container-demo-nginx ./nginx
+  - docker build -t shawakash54/multi-container-demo-server ./server
+  - docker build -t shawakash54/multi-container-demo-worker ./worker
+  # Log in to docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push shawakash54/multi-container-demo-client
+  - docker push shawakash54/multi-container-demo-nginx
+  - docker push shawakash54/multi-container-demo-server
+  - docker push shawakash54/multi-container-demo-worker
